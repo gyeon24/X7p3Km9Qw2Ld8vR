@@ -772,6 +772,9 @@
     body[data-page="login"] .password-form input:focus { border-color: var(--teal); box-shadow: 0 0 0 4px rgba(15,118,110,.12); }
     body[data-page="login"] .password-form button { min-height: 50px; margin-top: 4px; color: white; background: #064e3b; border: 0; border-radius: 14px; font-weight: 900; }
     body[data-page="login"] .login-message { min-height: 20px; margin: 2px 0 0; color: var(--rose); font-size: 13px; font-weight: 700; }
+    body[data-page="login"] .google-login { width: 100%; min-height: 50px; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 8px; color: #1f2937; background: white; border: 1px solid #d1d5db; border-radius: 14px; font-weight: 800; box-shadow: 0 4px 12px rgba(15,23,42,.06); }
+    body[data-page="login"] .google-login:active { transform: translateY(1px); }
+    body[data-page="login"] .google-mark { color: #4285f4; font-size: 20px; font-weight: 950; }
 
     @supports (height: 100dvh) {
       body[data-page="login"] .login-shell { min-height: 100dvh; }

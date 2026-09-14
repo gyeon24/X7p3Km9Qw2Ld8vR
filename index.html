@@ -11,17 +11,18 @@
   <main class="login-shell">
     <section class="login-card" aria-labelledby="login-title">
       <p class="login-kicker">LIFE SPIKE</p>
-      <h1 id="login-title">생활 루틴을 확인하려면<br />비밀번호를 입력하세요</h1>
+      <h1 id="login-title">생활 루틴을 확인하려면<br />Google로 로그인하세요</h1>
       <p class="login-copy">허가받은 사람만 이 페이지에 접속할 수 있습니다.</p>
 
-      <form id="password-form" class="password-form">
-        <label for="password">비밀번호</label>
-        <input id="password" name="password" type="password" autocomplete="current-password" required autofocus />
-        <button type="submit">접속하기</button>
+      <div class="password-form">
+        <button id="google-login" class="google-login" type="button">
+          <span class="google-mark" aria-hidden="true">G</span>
+          Google로 로그인
+        </button>
         <p id="login-message" class="login-message" role="alert" aria-live="polite"></p>
-      </form>
+      </div>
     </section>
   </main>
-  <script src="script.js"></script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>

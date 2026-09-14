@@ -1,44 +1,57 @@
-const SECRET_HASH = "bf5af61f788f718da34d404f5f3f127cce5140beef2b7662a9bd9955b6908002";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut
+} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyBK7BTggvKhVqlJJn0eP7dyqejq8g3vCEU",
+    authDomain: "life-f3119.firebaseapp.com",
+    projectId: "life-f3119",
+    storageBucket: "life-f3119.firebasestorage.app",
+    messagingSenderId: "214892394679",
+    appId: "1:214892394679:web:77691f030b4b3f3e313532"
+};
+
+const allowedUsers = [
+  "42thgoldenleaf@gmail.com"
+];
+
 const ACCESS_KEY = "lifeSpikeAccessGranted";
-
-async function sha256(value) {
-  const data = new TextEncoder().encode(value);
-  const digest = await crypto.subtle.digest("SHA-256", data);
-  return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("");
-}
-
-function hasAccess() {
-  try {
-    return sessionStorage.getItem(ACCESS_KEY) === "true";
-  } catch (error) {
-    return false;
-  }
-}
+const isPlaceholderConfig = Object.values(firebaseConfig).some(value => value.includes("여기에"));
+const app = isPlaceholderConfig ? null : initializeApp(firebaseConfig);
+const auth = app ? getAuth(app) : null;
+const provider = new GoogleAuthProvider();
 
 function showLoginMessage(message) {
   const messageElement = document.getElementById("login-message");
   if (messageElement) messageElement.textContent = message;
 }
 
-async function handleLogin(event) {
-  event.preventDefault();
-  const input = document.getElementById("password");
-  const password = input.value;
-
-  if (!password) {
-    showLoginMessage("비밀번호를 입력해 주세요.");
+async function handleGoogleLogin() {
+  if (!auth) {
+    showLoginMessage("Firebase 웹 설정을 먼저 입력해 주세요.");
     return;
   }
 
-  const hash = await sha256(password);
-  if (hash !== SECRET_HASH) {
-    showLoginMessage("비밀번호가 맞지 않습니다.");
-    input.select();
-    return;
-  }
+  try {
+    const result = await signInWithPopup(auth, provider);
+    const email = (result.user.email || "").toLowerCase();
 
-  sessionStorage.setItem(ACCESS_KEY, "true");
-  window.location.replace("secret.html");
+    if (!allowedUsers.includes(email)) {
+      showLoginMessage("허용되지 않은 Google 계정입니다.");
+      await signOut(auth);
+      return;
+    }
+
+    sessionStorage.setItem(ACCESS_KEY, "true");
+    window.location.replace("secret.html");
+  } catch (error) {
+    showLoginMessage("Google 로그인에 실패했습니다. 다시 시도해 주세요.");
+    console.error(error);
+  }
 }
 
 function initLogin() {
@@ -47,8 +60,8 @@ function initLogin() {
     return;
   }
 
-  const form = document.getElementById("password-form");
-  if (form) form.addEventListener("submit", handleLogin);
+  const button = document.getElementById("google-login");
+  if (button) button.addEventListener("click", handleGoogleLogin);
 }
 
 function protectSecret() {
