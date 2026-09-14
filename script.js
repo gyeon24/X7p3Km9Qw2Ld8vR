@@ -25,6 +25,14 @@ const app = isPlaceholderConfig ? null : initializeApp(firebaseConfig);
 const auth = app ? getAuth(app) : null;
 const provider = new GoogleAuthProvider();
 
+function hasAccess() {
+  try {
+    return sessionStorage.getItem(ACCESS_KEY) === "true";
+  } catch (error) {
+    return false;
+  }
+}
+
 function showLoginMessage(message) {
   const messageElement = document.getElementById("login-message");
   if (messageElement) messageElement.textContent = message;
@@ -38,9 +46,10 @@ async function handleGoogleLogin() {
 
   try {
     const result = await signInWithPopup(auth, provider);
-    const email = (result.user.email || "").toLowerCase();
+    const email = (result.user.email || "").trim().toLowerCase();
 
-    if (!allowedUsers.includes(email)) {
+    const normalizedAllowedUsers = allowedUsers.map(value => value.trim().toLowerCase());
+    if (!normalizedAllowedUsers.includes(email)) {
       showLoginMessage("허용되지 않은 Google 계정입니다.");
       await signOut(auth);
       return;
