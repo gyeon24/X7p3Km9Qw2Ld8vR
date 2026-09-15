@@ -2,9 +2,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/fireba
 import {
   getAuth,
   GoogleAuthProvider,
+  browserLocalPersistence,
   getRedirectResult,
+  onAuthStateChanged,
   signInWithPopup,
   signInWithRedirect,
+  setPersistence,
   signOut
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
 
@@ -31,9 +34,18 @@ const provider = new GoogleAuthProvider();
 
 function hasAccess() {
   try {
-    return sessionStorage.getItem(ACCESS_KEY) === "true";
+    return sessionStorage.getItem(ACCESS_KEY) === "true" || localStorage.getItem(ACCESS_KEY) === "true";
   } catch (error) {
     return false;
+  }
+}
+
+function saveAccess() {
+  try {
+    sessionStorage.setItem(ACCESS_KEY, "true");
+    localStorage.setItem(ACCESS_KEY, "true");
+  } catch (error) {
+    console.error("Unable to save login state:", error);
   }
 }
 
@@ -71,7 +83,7 @@ async function finishLogin(result) {
     return;
   }
 
-  sessionStorage.setItem(ACCESS_KEY, "true");
+  saveAccess();
   window.location.replace("secret.html");
 }
 
@@ -82,6 +94,7 @@ async function handleGoogleLogin() {
   }
 
   try {
+    await setPersistence(auth, browserLocalPersistence);
     if (isMobileBrowser()) {
       await signInWithRedirect(auth, provider);
     } else {
@@ -104,6 +117,7 @@ async function initLogin() {
 
   if (auth) {
     try {
+      await setPersistence(auth, browserLocalPersistence);
       await finishLogin(await getRedirectResult(auth));
     } catch (error) {
       showAuthError(error);
@@ -114,8 +128,34 @@ async function initLogin() {
   if (button) button.addEventListener("click", handleGoogleLogin);
 }
 
-function protectSecret() {
-  if (!hasAccess()) window.location.replace("index.html");
+async function protectSecret() {
+  if (hasAccess()) return;
+  if (!auth) {
+    window.location.replace("index.html");
+    return;
+  }
+
+  await setPersistence(auth, browserLocalPersistence);
+  const currentUser = await new Promise(resolve => {
+    let settled = false;
+    const unsubscribe = onAuthStateChanged(auth, user => {
+      if (settled) return;
+      settled = true;
+      unsubscribe();
+      resolve(user);
+    });
+  });
+
+  if (currentUser) {
+    const email = (currentUser.email || "").trim().toLowerCase();
+    const normalizedAllowedUsers = allowedUsers.map(value => value.trim().toLowerCase());
+    if (normalizedAllowedUsers.includes(email)) {
+      saveAccess();
+      return;
+    }
+  }
+
+  window.location.replace("index.html");
 }
 
 if (document.body.dataset.page === "login") initLogin();
