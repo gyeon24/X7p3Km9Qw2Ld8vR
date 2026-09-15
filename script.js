@@ -71,20 +71,25 @@ function isMobileBrowser() {
   return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 }
 
-async function finishLogin(result) {
-  if (!result || !result.user) return;
+async function finishUser(user) {
+  if (!user) return false;
 
-  const email = (result.user.email || "").trim().toLowerCase();
+  const email = (user.email || "").trim().toLowerCase();
   const normalizedAllowedUsers = allowedUsers.map(value => value.trim().toLowerCase());
 
   if (!normalizedAllowedUsers.includes(email)) {
     showLoginMessage("허용되지 않은 Google 계정입니다.");
     await signOut(auth);
-    return;
+    return false;
   }
 
   saveAccess();
   window.location.replace("secret.html");
+  return true;
+}
+
+async function finishLogin(result) {
+  return finishUser(result?.user || null);
 }
 
 async function handleGoogleLogin() {
@@ -118,7 +123,12 @@ async function initLogin() {
   if (auth) {
     try {
       await setPersistence(auth, browserLocalPersistence);
-      await finishLogin(await getRedirectResult(auth));
+      const redirectResult = await getRedirectResult(auth);
+      if (redirectResult?.user) {
+        await finishUser(redirectResult.user);
+      } else if (auth.currentUser) {
+        await finishUser(auth.currentUser);
+      }
     } catch (error) {
       showAuthError(error);
     }
