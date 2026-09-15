@@ -2,7 +2,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/fireba
 import {
   getAuth,
   GoogleAuthProvider,
+  getRedirectResult,
   signInWithPopup,
+  signInWithRedirect,
   signOut
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
 
@@ -40,6 +42,26 @@ function showLoginMessage(message) {
   if (messageElement) messageElement.textContent = message;
 }
 
+function isMobileBrowser() {
+  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
+
+async function finishLogin(result) {
+  if (!result || !result.user) return;
+
+  const email = (result.user.email || "").trim().toLowerCase();
+  const normalizedAllowedUsers = allowedUsers.map(value => value.trim().toLowerCase());
+
+  if (!normalizedAllowedUsers.includes(email)) {
+    showLoginMessage("허용되지 않은 Google 계정입니다.");
+    await signOut(auth);
+    return;
+  }
+
+  sessionStorage.setItem(ACCESS_KEY, "true");
+  window.location.replace("secret.html");
+}
+
 async function handleGoogleLogin() {
   if (!auth) {
     showLoginMessage("Firebase 웹 설정을 먼저 입력해 주세요.");
@@ -47,28 +69,30 @@ async function handleGoogleLogin() {
   }
 
   try {
-    const result = await signInWithPopup(auth, provider);
-    const email = (result.user.email || "").trim().toLowerCase();
-
-    const normalizedAllowedUsers = allowedUsers.map(value => value.trim().toLowerCase());
-    if (!normalizedAllowedUsers.includes(email)) {
-      showLoginMessage("허용되지 않은 Google 계정입니다.");
-      await signOut(auth);
-      return;
+    if (isMobileBrowser()) {
+      await signInWithRedirect(auth, provider);
+    } else {
+      await finishLogin(await signInWithPopup(auth, provider));
     }
-
-    sessionStorage.setItem(ACCESS_KEY, "true");
-    window.location.replace("secret.html");
   } catch (error) {
-    showLoginMessage("Google 로그인에 실패했습니다. 다시 시도해 주세요.");
+    showLoginMessage(`Google 로그인에 실패했습니다. (${error.code || "unknown-error"})`);
     console.error(error);
   }
 }
 
-function initLogin() {
+async function initLogin() {
   if (hasAccess()) {
     window.location.replace("secret.html");
     return;
+  }
+
+  if (auth) {
+    try {
+      await finishLogin(await getRedirectResult(auth));
+    } catch (error) {
+      showLoginMessage(`Google 로그인에 실패했습니다. (${error.code || "unknown-error"})`);
+      console.error(error);
+    }
   }
 
   const button = document.getElementById("google-login");
