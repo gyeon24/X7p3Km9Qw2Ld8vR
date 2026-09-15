@@ -42,6 +42,19 @@ function showLoginMessage(message) {
   if (messageElement) messageElement.textContent = message;
 }
 
+function showAuthError(error) {
+  const code = error?.code || "unknown-error";
+  const messages = {
+    "auth/unauthorized-domain": "Firebase에 이 사이트 도메인이 등록되지 않았습니다.",
+    "auth/popup-blocked": "팝업이 차단되어 Safari에서 다시 시도해 주세요.",
+    "auth/popup-closed-by-user": "Google 로그인 창이 닫혔습니다.",
+    "auth/operation-not-supported-in-this-environment": "텔레그램 브라우저에서는 지원되지 않습니다. Safari에서 열어 주세요.",
+    "auth/network-request-failed": "네트워크 오류가 발생했습니다. 인터넷 연결을 확인해 주세요."
+  };
+  showLoginMessage(`${messages[code] || "Google 로그인에 실패했습니다."} [${code}]`);
+  console.error("Firebase authentication error:", error);
+}
+
 function isMobileBrowser() {
   return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 }
@@ -75,8 +88,11 @@ async function handleGoogleLogin() {
       await finishLogin(await signInWithPopup(auth, provider));
     }
   } catch (error) {
-    showLoginMessage(`Google 로그인에 실패했습니다. (${error.code || "unknown-error"})`);
-    console.error(error);
+    if (error.code === "auth/popup-blocked" || error.code === "auth/operation-not-supported-in-this-environment") {
+      await signInWithRedirect(auth, provider);
+      return;
+    }
+    showAuthError(error);
   }
 }
 
@@ -90,8 +106,7 @@ async function initLogin() {
     try {
       await finishLogin(await getRedirectResult(auth));
     } catch (error) {
-      showLoginMessage(`Google 로그인에 실패했습니다. (${error.code || "unknown-error"})`);
-      console.error(error);
+      showAuthError(error);
     }
   }
 
