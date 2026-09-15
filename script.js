@@ -16,7 +16,8 @@ const firebaseConfig = {
 };
 
 const allowedUsers = [
-  "42thgoldenleaf@gmail.com"
+  "42thgoldenleaf@gmail.com",
+  "rosesunny91@gmail.com"
 ];
 
 const ACCESS_KEY = "lifeSpikeAccessGranted";
